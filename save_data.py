@@ -21,25 +21,25 @@ file = open(
 csvReader = csv.reader(file)
 
 for row in csvReader:
-    app = (row[0])
-    category = (row[2])
-    ratings = (row[3])
-    reviews = (row[4])
-    size = (row[5])
+    rating = row[2]
+    reviews = row[3]
+    installs = row[5][:-1].replace(',', '')
+    type = row[6]
+    price = row[7][1:]
 
-    print(app)
-    print(category)
-    print(ratings)
+    print(rating)
     print(reviews)
-    print(size)
+    print(installs)
+    print(type)
+    print(price)
 
     sql = """insert into data
         (
-            app,
-            category,
-            ratings,
+            rating,
             reviews,
-            size
+            installs,
+            type,
+            price
         )
         values
         (%s, %s, %s, %s, %s)
@@ -48,11 +48,11 @@ for row in csvReader:
     curs.execute(
         sql,
         (
-            app,
-            category,
-            ratings,
+            rating,
             reviews,
-            size
+            installs,
+            type,
+            price
         )
     )
 

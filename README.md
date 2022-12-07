@@ -1,7 +1,7 @@
 # 빅데이터 처리 기말 과제 프로젝트
 
 ## 프로젝트 주제
-`Kaggle Play Store Apps Dataset` 을 활용한 app 리뷰 평점 영향 요소 분석
+`Kaggle Play Store Apps Dataset` 을 활용한 앱 가격의 유/무료 여부가 다운로드 횟수에 미치는 영향
 
 
 <br/><br/>
@@ -113,8 +113,17 @@ RDS 는 본 프로젝트의 메인 주제가 아니며, 사전 지식이 필요�
 
 <br/><br/>
 RDS 데이터베이스 서비스에 접속하고, 신규 테이블을 생성한다.
+```sql
+create table bigdata.data
+(
+    rating   double      null,
+    reviews  bigint      null,
+    installs bigint      null,
+    type     varchar(10) null,
+    price    double      null
+);
+```
 <br/><br/>
-<img src="./images/table.png"/>
 
 `pymysql` 모듈을 설치하고, 다음 코드를 통해 `CSV`의 `Row`들을 바로 RDS 데이터베이스 서비스로 업로드한다. `RDS`에서 퍼블릭 액세스를 허용하였으므로 외부 인터넷에서도 직접적으로 접근할 수 있다. (보안 관계 상 프로젝트 종료 후 삭제 예정)
 ```python
@@ -153,29 +162,29 @@ csvReader = csv.reader(file)
 for row in csvReader:
     
     # `row` 배열에서 각 `index` 마다 변수화한다.
-    app = (row[0])
-    category = (row[2])
-    ratings = (row[3])
-    reviews = (row[4])
-    size = (row[5])
+    rating = row[2]
+    reviews = row[3]
+    installs = row[5][:-1].replace(',', '')
+    type = row[6]
+    price = row[7][1:]
 
     # 각 변수에 데이터가 잘 저장되었는지를 실시간으로 출력한다.
-    print(app)
-    print(category)
-    print(ratings)
+    print(rating)
     print(reviews)
-    print(size)
+    print(installs)
+    print(type)
+    print(price)
 
     # 변수화된 데이터를 실제 데이터베이스 테이블에 입력하는 Query를 선언한다.
     # `data` 는 RDS 데이터베이스 생성 시 기본적으로 생성한 테이블 이름이다.
     # `%s` 를 활용하여 각 `Column`에 입력할 데이터를 대입한다.
     sql = """insert into data
         (
-            app,
-            category,
-            ratings,
+            rating,
             reviews,
-            size
+            installs,
+            type,
+            price
         )
         values
         (%s, %s, %s, %s, %s)
@@ -186,11 +195,11 @@ for row in csvReader:
     curs.execute(
         sql,
         (
-            app,
-            category,
-            ratings,
+            rating,
             reviews,
-            size
+            installs,
+            type,
+            price
         )
     )
 
@@ -257,10 +266,19 @@ connect.close()
 <img src="./images/grafana-table.png"/>
 <br/><br/>
 
-다음과 같이 데이터를 히스토그램 형태로 배치할 수 있다.
+`Grafana 메뉴`에서 `Dashboards` -> `Browse`로 진입한 다음, `New Dashboard`를 생성한다.
+<br/><br/>
+<img src="./images/dashboard-browse.png"/>
+<br/><br/>
+
+
+ 다음과 같이 데이터를 히스토그램 형태로 배치할 수 있다.
 <br/><br/>
 <img src="./images/grafana-histogram.png"/>
 
 <br/><br/>
 
-### 결론
+## 결론
+- 앱 가격의 유/무료 여부는 앱 다운로드 횟수에 치명적인 영향을 미친다.
+- 앱스토어 특성 상 실시간으로 다운로드 수가 변경되지만, 무료 앱에 90% 이상의 값이 존재하는 것으로 보아
+- 유료 앱에 대한 신뢰도가 없다면 다운로드조차 이루어지지 않는다.
